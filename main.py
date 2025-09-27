@@ -1,20 +1,40 @@
+from time import sleep
+import sounddevice as sd
 from pygame import *
 init()
+mixer.init()
 from random import *
 window_size = 1200,800
 window = display.set_mode(window_size)
 clock = time.Clock()
+play = True
+gravitation = 5
+lose = False
 
 sky_background = image.load('img/sky.png')
 sky_background = transform.scale(sky_background,window_size)
 
-bird_img = image.load('img/bird.png')
-bird_img = transform.scale(bird_img,(100,100))
+bird_img1 = image.load('img/bird.png')
+bird_img1 = transform.scale(bird_img1,(100,100))
+
+bird_img2 = image.load('img/bird2.png')
+bird_img2 = transform.scale(bird_img2,(100,100))
+
+bird_img = bird_img1
 
 bird = Rect(150,window_size[1]//2-100,100,100)
-lose = False
 
 pipes_img = image.load('img/pipes.png')
+
+jump = 'sound/jump.wav'
+play_jamp = mixer.Sound(jump)
+
+background_sound = 'sound/background_sound.mp3'
+background_sound = mixer.Sound(background_sound)
+
+lose_sound = 'sound/lose.wav'
+lose_sound = mixer.Sound(lose_sound)
+
 
 
 
@@ -34,10 +54,13 @@ main_font = font.Font(None,100)
 pipes = generate_pipes(150)
 score = 0
 while True:
+    if not lose and not mixer.get_busy():
+        background_sound.play(-1)
 
     for e in event.get():
         if e.type == QUIT:
             quit()
+        
     window.blit(sky_background,(0,0))
 
     window.blit(bird_img,bird)
@@ -63,7 +86,11 @@ while True:
 
         
         if bird.colliderect(p):
+            background_sound.stop()
+            play_jamp.stop()
             lose = True
+            if lose and not mixer.get_busy():
+                lose_sound.play()
     
     if len(pipes) < 8:
         pipes += generate_pipes(150)
@@ -77,11 +104,29 @@ while True:
     keys = key.get_pressed()
 
     
+        
+
     
     if keys[K_w] and not lose:
+        bird_img = bird_img2
+        gravitation = 5
         bird.y -= 15
+        try:
+            if play:
+                play_jamp.play()
+                play = False
+        except:
+            pass
     else:
-        bird.y += 15
+        bird_img = bird_img1
+        gravitation += 1
+        bird.y += gravitation   
+
+    for e in event.get():  
+        if e.type == KEYUP:
+            if e.key == K_w:
+                play = True
+    
 
     if keys[K_r] and lose:
         bird.y = window_size[1]//2 - 100
